@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Marées Saint-Malo 2027</title>
+  <style>
+    :root {
+      --bg: #0b132b;
+      --card: #1c2541;
+      --accent: #48cae4;
+      --accent-strong: #0077b6;
+      --text: #f8f9fa;
+      --text-muted: #94a3b8;
+      --threshold: #f77f00;
+      --water-ok: rgba(72, 202, 228, 0.25);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      padding: 4px 0;
+    }
+    header h1 {
+      font-size: 1.25rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    header p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .panel {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .date-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    input[type="date"] {
+      background: #0b132b;
+      color: #fff;
+      border: 1px solid var(--accent-strong);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      flex-grow: 1;
+      text-align: center;
+    }
+    .btn-nav {
+      background: var(--accent-strong);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .threshold-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+    .threshold-val {
+      font-weight: 700;
+      color: var(--threshold);
+      font-size: 1rem;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--threshold);
+    }
+    .readout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      text-align: center;
+    }
+    .readout-box {
+      background: #0f172a;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .readout-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .readout-val {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 2px;
+    }
+    #probe-height {
+      color: var(--accent);
+    }
+    .canvas-container {
+      position: relative;
+      background: #0f172a;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 260px;
+    }
+    .windows-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 0.85rem;
+    }
+    .windows-title {
+      color: var(--threshold);
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .windows-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .window-item {
+      background: #0b132b;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border-left: 3px solid var(--threshold);
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+    }
+    .tides-summary {
+      display: flex;
+      justify-content: space-around;
+      font-size: 0.8rem;
+      background: #0f172a;
+      padding: 6px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Saint-Malo 2027</h1>
+    <p>Courbe continue & seuil d'eau navigabilité</p>
+  </header>
+
+  <div class="panel">
+    <div class="date-row">
+      <button class="btn-nav" id="prev-day">◀</button>
+      <input type="date" id="date-picker" value="2027-06-15" min="2027-01-01" max="2027-12-31">
+      <button class="btn-nav" id="next-day">▶</button>
+    </div>
+
+    <div class="threshold-row">
+      <span>Tirant d'eau / Seuil requis :</span>
+      <span class="threshold-val" id="thresh-display">4.00 m</span>
+    </div>
+    <input type="range" id="thresh-slider" min="1.0" max="10.0" step="0.1" value="4.0">
+
+    <div class="readout">
+      <div class="readout-box">
+        <div class="readout-label">Heure ciblée</div>
+        <div class="readout-val" id="probe-time">12:00</div>
+      </div>
+      <div class="readout-box">
+        <div class="readout-label">Hauteur d'eau</div>
+        <div class="readout-val" id="probe-height">-- m</div>
+      </div>
+    </div>
+
+    <div class="tides-summary" id="extremes-summary">
+      <!-- Calcul automatique PM / BM -->
+    </div>
+  </div>
+
+  <div class="canvas-container" id="container">
+    <canvas id="tide-canvas"></canvas>
+  </div>
+
+  <div class="windows-card">
+    <div class="windows-title">
+      <span>⚓</span> Créneaux disponibles (≥ <span id="thresh-label">4.00 m</span>)
+    </div>
+    <div class="windows-list" id="nav-windows">
+      <!-- Créneaux calculés ici -->
+    </div>
+  </div>
+
+  <script>
+    // Composantes harmoniques adaptées pour Saint-Malo (Z0 ~ 6.8m, grand marnage)
+    const Z0 = 6.80;
+    const CONSTITUENTS = [
+      { speed: 28.9841042, amp: 4.80, phase: 185.0 }, // M2
+      { speed: 30.0000000, amp: 1.65, phase: 235.0 }, // S2
+      { speed: 28.4397295, amp: 0.95, phase: 160.0 }, // N2
+      { speed: 15.0410686, amp: 0.12, phase: 75.0  }, // K1
+      { speed: 13.9430356, amp: 0.10, phase: 60.0  }, // O1
+      { speed: 57.9682084, amp: 0.32, phase: 310.0 }  // M4 (asymétrie locale)
+    ];
+
+    const REF_EPOCH = Date.UTC(2027, 0, 1, 0, 0, 0);
+
+    function getWaterHeight(dateObj) {
+      const hours = (dateObj.getTime() - REF_EPOCH) / 3600000;
+      let h = Z0;
+      for (let c of CONSTITUENTS) {
+        const rad = (c.speed * hours - c.phase) * (Math.PI / 180);
+        h += c.amp * Math.cos(rad);
+      }
+      return Math.max(0.2, h);
+    }
+
+    const datePicker = document.getElementById('date-picker');
+    const prevBtn = document.getElementById('prev-day');
+    const nextBtn = document.getElementById('next-day');
+    const slider = document.getElementById('thresh-slider');
+    const threshDisplay = document.getElementById('thresh-display');
+    const threshLabel = document.getElementById('thresh-label');
+    const probeTime = document.getElementById('probe-time');
+    const probeHeight = document.getElementById('probe-height');
+    const navWindowsDiv = document.getElementById('nav-windows');
+    const extremesDiv = document.getElementById('extremes-summary');
+    const canvas = document.getElementById('tide-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let currentMinutes = 12 * 60; // 12h00 par défaut
+    let threshold = 4.0;
+    let dayData = [];
+
+    function updateDayData() {
+      const [year, month, day] = datePicker.value.split('-').map(Number);
+      dayData = [];
+      for (let m = 0; m <= 1440; m++) {
+        const d = new Date(Date.UTC(year, month - 1, day, Math.floor(m / 60), m % 60));
+        dayData.push({ minute: m, height: getWaterHeight(d) });
+      }
+      computeExtremes();
+      computeWindows();
+      draw();
+    }
+
+    function computeExtremes() {
+      let extremes = [];
+      for (let i = 1; i < dayData.length - 1; i++) {
+        const prev = dayData[i - 1].height;
+        const cur = dayData[i].height;
+        const next = dayData[i + 1].height;
+        if (cur > prev && cur > next) {
+          extremes.push({ type:
